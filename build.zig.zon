@@ -1,0 +1,14 @@
+.{
+    .name = .copyfail,
+    .version = "0.0.1",
+    .minimum_zig_version = "0.16.0",
+    .paths = .{
+        "src",
+        "payload",
+        "build.zig",
+        "build.zig.zon",
+        "README.md",
+        "LICENSE",
+    },
+    .fingerprint = 0x1e3b3f17f7076c59,
+}
