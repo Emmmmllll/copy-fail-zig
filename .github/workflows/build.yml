@@ -26,7 +26,7 @@ jobs:
           # Musl targets
           - x86_64-linux-musl
           - aarch64-linux-musl
-          - armv7-linux-musleabihf
+          - arm-linux-musleabihf
           - riscv64-linux-musl
           - powerpc64le-linux-musl
           - s390x-linux-musl
@@ -42,7 +42,7 @@ jobs:
                        -Doptimize=ReleaseSmall \
                        --prefix-exe-dir ${{ matrix.target }}
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: copyfail-${{ matrix.target }}
           path: zig-out/${{ matrix.target }}/copyfail
@@ -59,7 +59,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Download artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: copyfail-*
           path: zig-out/
