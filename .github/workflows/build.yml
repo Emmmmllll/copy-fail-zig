@@ -56,8 +56,7 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          name: copyfail-*
-          path: zig-out/
+          path: zig-out
       - name: Rename for release
         run: |
           mkdir -p release
