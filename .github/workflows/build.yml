@@ -1,0 +1,95 @@
+name: build
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          # Glibc targets
+          - x86_64-linux-gnu
+          - aarch64-linux-gnu
+          - armv7-linux-gnueabihf
+          - riscv64-linux-gnu
+          - powerpc64le-linux-gnu
+          - s390x-linux-gnu
+          # Musl targets
+          - x86_64-linux-musl
+          - aarch64-linux-musl
+          - armv7-linux-musleabihf
+          - riscv64-linux-musl
+          - powerpc64le-linux-musl
+          - s390x-linux-musl
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+      - uses: https://codeberg.org/mlugg/setup-zig@v2
+        with:
+          version: 0.16.0
+      - run: zig build -Dtarget=${{ matrix.target }} \
+                       -Dcpu=baseline \
+                       -Doptimize=ReleaseSmall \
+                       --prefix-exe-dir ${{ matrix.target }}
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: copyfail-${{ matrix.target }}
+          path: zig-out/${{ matrix.target }}/copyfail
+          retention-days: 90
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    name: release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: copyfail-*
+          path: zig-out/
+      - name: Rename for release
+        run: |
+          mkdir -p release
+          for file in zig-out/*/copyfail; do
+            target=$(basename $(dirname $file))
+            mv $file release/copyfail-${target}
+            chmod +x release/copyfail-${target}
+          done
+          ls -l release
+      - name: Create Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --notes-file - release/* <<EOF
+            Cross-platform Zig port of CVE-2026-31431 (Copy Fail).
+
+            Discovery and disclosure: Theori / Xint, https://copy.fail/
+
+            Each binary is statically linked. 
+            Download the binary matching your target architecture.
+
+            Naming pattern: `copyfail-<arch>-linux-<libc>`
+
+            Architectures: x86_64, aarch64, armv7, riscv64, powerpc64le, s390x
+            
+            EOF
