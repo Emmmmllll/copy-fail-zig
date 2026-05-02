@@ -75,15 +75,15 @@ jobs:
           gh release create "$TAG" \
             --title "$TAG" \
             --notes-file - release/* <<EOF
-            Cross-platform Zig port of CVE-2026-31431 (Copy Fail).
+          Cross-platform Zig port of CVE-2026-31431 (Copy Fail).
 
-            Discovery and disclosure: Theori / Xint, https://copy.fail/
+          Discovery and disclosure: Theori / Xint, https://copy.fail/
 
-            Each binary is statically linked. 
-            Download the binary matching your target architecture.
+          Each binary is statically linked. 
+          Download the binary matching your target architecture.
 
-            Naming pattern: `copyfail-<arch>-linux-<libc>`
+          Naming pattern: `copyfail-<arch>-linux-<libc>`
 
-            Architectures: x86_64, aarch64, arm, riscv64, powerpc64le, s390x
+          Architectures: x86_64, aarch64, arm, riscv64, powerpc64le, s390x
 
-            EOF
+          EOF
