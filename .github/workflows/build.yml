@@ -19,7 +19,7 @@ jobs:
           # Glibc targets
           - x86_64-linux-gnu
           - aarch64-linux-gnu
-          - armv7-linux-gnueabihf
+          - arm-linux-gnueabihf
           - riscv64-linux-gnu
           - powerpc64le-linux-gnu
           - s390x-linux-gnu
@@ -90,6 +90,6 @@ jobs:
 
             Naming pattern: `copyfail-<arch>-linux-<libc>`
 
-            Architectures: x86_64, aarch64, armv7, riscv64, powerpc64le, s390x
-            
+            Architectures: x86_64, aarch64, arm, riscv64, powerpc64le, s390x
+
             EOF
