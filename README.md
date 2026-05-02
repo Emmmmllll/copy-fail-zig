@@ -40,7 +40,7 @@ Usage:
   help                                        - Show this message
 ```
 
-The executable can be run with 4 different commands:
+The executable can be run with different commands:
 
 **`run`** 
 first writes the provided data at the given offset (default 0) to the executable at the provided path, then runs it.
@@ -78,6 +78,17 @@ resets the file at the provided path to its original state using posix_fadvise. 
 Example:
 ```bash
 copyfail reset /path/to/file
+```
+
+**`is_vulnerable`**
+checks if the system is vulnerable by creating a temporary file, writing test data to it, and reading it back to see if the data got corrupted.
+
+Example:
+```bash
+$ copyfail is_vulnerable
+warning: System is vulnerable
+OR
+info: System is not vulnerable
 ```
 
 **`help`**
