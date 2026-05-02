@@ -39,7 +39,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: copyfail-${{ matrix.target }}
+          name: ${{ matrix.target }}
           path: zig-out/${{ matrix.target }}/copyfail
           retention-days: 90
   release:
